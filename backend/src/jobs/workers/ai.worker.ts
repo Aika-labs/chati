@@ -10,6 +10,13 @@ const logger = createModuleLogger('ai-worker');
 
 const connection = getRedisConnection();
 
+const logger = createModuleLogger('ai-worker');
+
+const connection = {
+  host: new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').hostname,
+  port: parseInt(new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').port || '6379'),
+};
+
 export function startAIWorker(): Worker {
   const worker = new Worker<AIProcessingJob>(
     QUEUE_NAMES.AI_PROCESSING,

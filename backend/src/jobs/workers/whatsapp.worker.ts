@@ -10,6 +10,13 @@ const logger = createModuleLogger('whatsapp-worker');
 
 const connection = getRedisConnection();
 
+const logger = createModuleLogger('whatsapp-worker');
+
+const connection = {
+  host: new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').hostname,
+  port: parseInt(new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').port || '6379'),
+};
+
 export function startWhatsAppWorker(): Worker {
   const worker = new Worker<WhatsAppSendJob>(
     QUEUE_NAMES.WHATSAPP_SEND,

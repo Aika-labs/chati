@@ -45,6 +45,7 @@ export class CircuitBreaker {
       case 'CLOSED':
         return true;
       case 'OPEN': {
+      case 'OPEN':
         // Check if timeout has passed
         const openedAt = await redis.get(`circuit:${serviceName}:openedAt`);
         if (openedAt) {

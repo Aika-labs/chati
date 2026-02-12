@@ -8,6 +8,13 @@ const logger = createModuleLogger('rag-worker');
 
 const connection = getRedisConnection();
 
+const logger = createModuleLogger('rag-worker');
+
+const connection = {
+  host: new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').hostname,
+  port: parseInt(new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').port || '6379'),
+};
+
 export function startRAGWorker(): Worker {
   const worker = new Worker<RAGIndexingJob>(
     QUEUE_NAMES.RAG_INDEXING,

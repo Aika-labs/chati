@@ -1,5 +1,7 @@
 import { Queue, Job } from 'bullmq';
 import { getRedisConnection } from '../config/redis.js';
+import { Queue, Worker, Job } from 'bullmq';
+import { redis } from '../config/redis.js';
 import { createModuleLogger } from '../shared/utils/logger.js';
 
 const logger = createModuleLogger('queue');
@@ -14,6 +16,10 @@ export const QUEUE_NAMES = {
 
 // Connection config for BullMQ
 const connection = getRedisConnection();
+const connection = {
+  host: new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').hostname,
+  port: parseInt(new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').port || '6379'),
+};
 
 // Create queues
 export const aiQueue = new Queue(QUEUE_NAMES.AI_PROCESSING, { connection });

@@ -37,6 +37,7 @@ export class WhatsAppController {
     req: Request,
     res: Response<ApiResponse>,
     _next: NextFunction
+    next: NextFunction
   ): Promise<void> {
     try {
       // Always respond quickly to Meta

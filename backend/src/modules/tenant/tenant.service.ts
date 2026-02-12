@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { prisma } from '../../config/database.js';
 import { NotFoundError, ValidationError, AuthorizationError } from '../../shared/middleware/error.handler.js';
 import { createModuleLogger } from '../../shared/utils/logger.js';
+import type { TenantStatus, PlanType } from '../../shared/types/index.js';
 
 const logger = createModuleLogger('tenant');
 
@@ -99,6 +100,7 @@ export class TenantService {
    */
   async updateWhatsAppConfig(tenantId: string, input: UpdateWhatsAppConfigInput) {
     await prisma.tenant.update({
+    const tenant = await prisma.tenant.update({
       where: { id: tenantId },
       data: {
         whatsappPhoneNumberId: input.whatsappPhoneNumberId,
@@ -122,6 +124,7 @@ export class TenantService {
     if (input.googleSheetId !== undefined) data.googleSheetId = input.googleSheetId;
 
     await prisma.tenant.update({
+    const tenant = await prisma.tenant.update({
       where: { id: tenantId },
       data,
     });

@@ -11,6 +11,13 @@ const logger = createModuleLogger('reminder-worker');
 
 const connection = getRedisConnection();
 
+const logger = createModuleLogger('reminder-worker');
+
+const connection = {
+  host: new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').hostname,
+  port: parseInt(new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').port || '6379'),
+};
+
 export function startReminderWorker(): Worker {
   const worker = new Worker<ReminderJob>(
     QUEUE_NAMES.REMINDERS,

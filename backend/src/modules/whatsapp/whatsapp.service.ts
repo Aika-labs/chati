@@ -2,6 +2,10 @@ import { z } from 'zod';
 import { prisma } from '../../config/database.js';
 import { createModuleLogger } from '../../shared/utils/logger.js';
 import { AppError } from '../../shared/middleware/error.handler.js';
+import { env } from '../../config/env.js';
+import { createModuleLogger } from '../../shared/utils/logger.js';
+import { AppError } from '../../shared/middleware/error.handler.js';
+import type { WhatsAppMessage, WhatsAppWebhookPayload } from '../../shared/types/index.js';
 
 const logger = createModuleLogger('whatsapp');
 
@@ -331,6 +335,7 @@ export class WhatsAppService {
     const url = `${WHATSAPP_API_URL}/${phoneNumberId}/${endpoint}`;
 
     const options: globalThis.RequestInit = {
+    const options: RequestInit = {
       method,
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -343,6 +348,7 @@ export class WhatsAppService {
     }
 
     const response = await globalThis.fetch(url, options);
+    const response = await fetch(url, options);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

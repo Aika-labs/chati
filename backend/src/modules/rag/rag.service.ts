@@ -14,6 +14,10 @@ const logger = createModuleLogger('rag');
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _groq = new Groq({ apiKey: env.GROQ_API_KEY });
 
+const logger = createModuleLogger('rag');
+
+const groq = new Groq({ apiKey: env.GROQ_API_KEY });
+
 // Embedding dimensions for text-embedding-3-small equivalent
 const EMBEDDING_DIMENSIONS = 1536;
 const CHUNK_SIZE = 1000; // characters per chunk
@@ -40,6 +44,7 @@ export class RAGService {
   async uploadDocument(
     tenantId: string,
     file: Multer.File
+    file: Express.Multer.File
   ): Promise<DocumentUploadResult> {
     // Check document limit
     const docCount = await prisma.document.count({ where: { tenantId } });
