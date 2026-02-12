@@ -10,6 +10,7 @@ interface AuthStore extends AuthState {
   logout: () => void;
   refreshUser: () => Promise<void>;
   setLoading: (loading: boolean) => void;
+  setAuth: (data: { token: string; user: User; tenant: Tenant }) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -125,6 +126,18 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       setLoading: (loading: boolean) => set({ isLoading: loading }),
+
+      setAuth: (data: { token: string; user: User; tenant: Tenant }) => {
+        localStorage.setItem('token', data.token);
+        connectSocket(data.token);
+        set({
+          user: data.user,
+          tenant: data.tenant,
+          token: data.token,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      },
     }),
     {
       name: 'auth-storage',

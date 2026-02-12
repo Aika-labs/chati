@@ -19,6 +19,7 @@ import { calendarRoutes } from './modules/calendar/calendar.routes.js';
 import { contactsRoutes } from './modules/contacts/contacts.routes.js';
 import { ragRoutes } from './modules/rag/rag.routes.js';
 import { knowledgeRoutes } from './modules/knowledge/knowledge.routes.js';
+import { autoReplyRoutes } from './modules/autoreply/autoreply.routes.js';
 
 // Import Socket.io handler
 import { setupSocketHandlers } from './modules/realtime/socket.handler.js';
@@ -76,6 +77,7 @@ app.use('/api/calendar', calendarRoutes);
 app.use('/api/contacts', contactsRoutes);
 app.use('/api/rag', ragRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
+app.use('/api/autoreply', autoReplyRoutes);
 
 // 404 handler
 app.use((_req, res) => {

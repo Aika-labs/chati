@@ -131,6 +131,13 @@ export class SocketEmitter {
   emitRateLimitWarning(tenantId: string, usage: { current: number; limit: number; percent: number }): void {
     this.io.to(`tenant:${tenantId}`).emit('ratelimit:warning', usage);
   }
+
+  /**
+   * Generic emit to tenant room
+   */
+  emitToTenant(tenantId: string, event: string, data: unknown): void {
+    this.io.to(`tenant:${tenantId}`).emit(event, data);
+  }
 }
 
 // Singleton instance (set in app.ts)
@@ -142,4 +149,13 @@ export function initSocketEmitter(io: SocketIOServer): void {
 
 export function getSocketEmitter(): SocketEmitter | null {
   return socketEmitter;
+}
+
+/**
+ * Emit event to a tenant room (convenience function)
+ */
+export function emitToTenant(tenantId: string, event: string, data: unknown): void {
+  if (socketEmitter) {
+    socketEmitter.emitToTenant(tenantId, event, data);
+  }
 }
