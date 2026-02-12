@@ -1,0 +1,472 @@
+// Chati - Multi-tenant SaaS WhatsApp AI
+// Database: PostgreSQL (Supabase)
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+// ============================================
+// TENANT & AUTH
+// ============================================
+
+model Tenant {
+  id        String       @id @default(cuid())
+  name      String
+  slug      String       @unique
+  status    TenantStatus @default(TRIAL)
+  plan      PlanType     @default(FREE)
+  
+  // Billing
+  trialEndsAt       DateTime?
+  subscriptionId    String?
+  lastPaymentAt     DateTime?
+  suspendedAt       DateTime?
+  suspensionReason  String?
+
+  // Limits (overridable per tenant)
+  maxOutboundMessagesPerDay Int @default(250)
+  maxDocuments              Int @default(50)
+  maxContacts               Int @default(1000)
+
+  // WhatsApp Config
+  whatsappPhoneNumberId     String?
+  whatsappBusinessAccountId String?
+  whatsappAccessToken       String?
+
+  // Google Calendar Config
+  googleCalendarId          String?
+  googleRefreshToken        String?
+
+  // Google Sheets Config
+  googleSheetId             String?
+
+  // Business Info (for AI context)
+  businessName        String?
+  businessDescription String?
+  timezone            String   @default("America/Mexico_City")
+  workingHoursStart   String   @default("09:00")
+  workingHoursEnd     String   @default("18:00")
+  workingDays         String[] @default(["mon", "tue", "wed", "thu", "fri"])
+
+  // Relations
+  users         User[]
+  contacts      Contact[]
+  conversations Conversation[]
+  messages      Message[]
+  appointments  Appointment[]
+  documents     Document[]
+  products      Product[]
+  services      Service[]
+  usageRecords  UsageRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([slug])
+}
+
+model User {
+  id       String   @id @default(cuid())
+  email    String   @unique
+  password String
+  name     String
+  role     UserRole @default(AGENT)
+  isActive Boolean  @default(true)
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Activity
+  lastLoginAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([email])
+}
+
+enum TenantStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum PlanType {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  AGENT
+}
+
+// ============================================
+// CONTACTS (CRM Lite)
+// ============================================
+
+model Contact {
+  id          String  @id @default(cuid())
+  phone       String  // WhatsApp phone number (with country code)
+  name        String?
+  email       String?
+  avatarUrl   String?
+  
+  // CRM fields
+  notes       String?
+  score       Int     @default(0) // Engagement score
+  
+  // Metadata
+  firstContactAt DateTime @default(now())
+  lastContactAt  DateTime @default(now())
+  totalMessages  Int      @default(0)
+  
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Relations
+  tags          ContactTag[]
+  conversations Conversation[]
+  appointments  Appointment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, phone])
+  @@index([tenantId])
+  @@index([phone])
+  @@index([lastContactAt])
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String
+  color String @default("#6366f1")
+
+  tenantId String
+  
+  contacts ContactTag[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model ContactTag {
+  contactId String
+  tagId     String
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@id([contactId, tagId])
+}
+
+// ============================================
+// CONVERSATIONS & MESSAGES
+// ============================================
+
+model Conversation {
+  id     String             @id @default(cuid())
+  status ConversationStatus @default(OPEN)
+
+  // AI handling
+  isAiEnabled   Boolean @default(true)
+  aiTakenOver   Boolean @default(false) // Human took over
+  
+  // Context for AI
+  currentIntent String?
+  contextData   Json?
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  contactId String
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  messages Message[]
+
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([contactId])
+  @@index([status])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id        String        @id @default(cuid())
+  direction MessageDirection
+  type      MessageType   @default(TEXT)
+  
+  // Content
+  content   String?       // Text content
+  mediaUrl  String?       // For images, documents, etc.
+  mediaType String?       // MIME type
+  fileName  String?       // For documents
+
+  // WhatsApp metadata
+  waMessageId String?     @unique
+  waStatus    WaMessageStatus @default(PENDING)
+  waTimestamp DateTime?
+
+  // AI metadata
+  isAiGenerated Boolean @default(false)
+  aiConfidence  Float?
+  aiIntent      String?
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([conversationId])
+  @@index([waMessageId])
+  @@index([createdAt])
+}
+
+enum ConversationStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  DOCUMENT
+  AUDIO
+  VIDEO
+  LOCATION
+  CONTACT
+  INTERACTIVE
+  TEMPLATE
+}
+
+enum WaMessageStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+// ============================================
+// APPOINTMENTS & CALENDAR
+// ============================================
+
+model Appointment {
+  id     String            @id @default(cuid())
+  status AppointmentStatus @default(SCHEDULED)
+
+  // Scheduling
+  scheduledAt DateTime
+  duration    Int      @default(60) // minutes
+  
+  // Details
+  title       String
+  description String?
+  
+  // Google Calendar sync
+  googleEventId String?
+
+  // Reminders
+  reminder24hSent Boolean @default(false)
+  reminder1hSent  Boolean @default(false)
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  contactId String
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  serviceId String?
+  service   Service? @relation(fields: [serviceId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([contactId])
+  @@index([scheduledAt])
+  @@index([status])
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// ============================================
+// KNOWLEDGE BASE (Products, Services, Prices)
+// ============================================
+
+model Service {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  price       Decimal @db.Decimal(10, 2)
+  duration    Int     @default(60) // minutes
+  isActive    Boolean @default(true)
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  appointments Appointment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([isActive])
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  price       Decimal @db.Decimal(10, 2)
+  sku         String?
+  imageUrl    String?
+  isActive    Boolean @default(true)
+  
+  // Stock (optional)
+  stockQuantity Int?
+  
+  // Category
+  category    String?
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([isActive])
+  @@index([category])
+}
+
+// ============================================
+// RAG - Documents & Embeddings
+// ============================================
+
+model Document {
+  id       String         @id @default(cuid())
+  name     String
+  type     DocumentType
+  status   DocumentStatus @default(PENDING)
+  
+  // File info
+  fileUrl  String
+  fileSize Int            // bytes
+  mimeType String
+  
+  // Processing
+  pageCount    Int?
+  chunkCount   Int       @default(0)
+  processedAt  DateTime?
+  errorMessage String?
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  chunks DocumentChunk[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+model DocumentChunk {
+  id      String @id @default(cuid())
+  content String
+  
+  // Vector embedding for semantic search
+  embedding Unsupported("vector(1536)")?
+  
+  // Metadata
+  pageNumber Int?
+  chunkIndex Int
+  
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([documentId])
+}
+
+enum DocumentType {
+  PDF
+  EXCEL
+  CSV
+  TEXT
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// ============================================
+// USAGE TRACKING & RATE LIMITING
+// ============================================
+
+model UsageRecord {
+  id   String    @id @default(cuid())
+  type UsageType
+  date DateTime  @db.Date
+
+  // Counters
+  count Int @default(0)
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, type, date])
+  @@index([tenantId])
+  @@index([date])
+}
+
+enum UsageType {
+  OUTBOUND_MESSAGES
+  INBOUND_MESSAGES
+  AI_REQUESTS
+  RAG_QUERIES
+  API_REQUESTS
+}
