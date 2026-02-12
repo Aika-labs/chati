@@ -4,11 +4,13 @@ import { aiService } from '../../modules/ai/ai.service.js';
 import { prisma } from '../../config/database.js';
 import { createModuleLogger } from '../../shared/utils/logger.js';
 import { getSocketEmitter } from '../../modules/realtime/socket.handler.js';
-import { getRedisConnection } from '../../config/redis.js';
 
 const logger = createModuleLogger('ai-worker');
 
-const connection = getRedisConnection();
+const connection = {
+  host: new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').hostname,
+  port: parseInt(new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').port || '6379'),
+};
 
 export function startAIWorker(): Worker {
   const worker = new Worker<AIProcessingJob>(
