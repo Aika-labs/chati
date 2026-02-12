@@ -1,5 +1,4 @@
 import { Worker, Job } from 'bullmq';
-import { URL } from 'url';
 import { QUEUE_NAMES, type AIProcessingJob, addWhatsAppSendJob } from '../queue.js';
 import { aiService } from '../../modules/ai/ai.service.js';
 import { prisma } from '../../config/database.js';

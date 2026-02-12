@@ -1,5 +1,4 @@
 import { Worker, Job } from 'bullmq';
-import { URL } from 'url';
 import { QUEUE_NAMES, type RAGIndexingJob } from '../queue.js';
 import { ragService } from '../../modules/rag/rag.service.js';
 import { createModuleLogger } from '../../shared/utils/logger.js';

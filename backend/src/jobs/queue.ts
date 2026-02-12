@@ -1,5 +1,5 @@
-import { Queue, Job } from 'bullmq';
-import { URL } from 'url';
+import { Queue, Worker, Job } from 'bullmq';
+import { redis } from '../config/redis.js';
 import { createModuleLogger } from '../shared/utils/logger.js';
 
 const logger = createModuleLogger('queue');

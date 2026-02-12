@@ -1,5 +1,4 @@
 import { Worker, Job } from 'bullmq';
-import { URL } from 'url';
 import { QUEUE_NAMES, type ReminderJob, addWhatsAppSendJob } from '../queue.js';
 import { calendarService } from '../../modules/calendar/calendar.service.js';
 import { prisma } from '../../config/database.js';

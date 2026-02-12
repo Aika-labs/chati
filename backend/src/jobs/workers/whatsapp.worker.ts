@@ -1,5 +1,4 @@
 import { Worker, Job } from 'bullmq';
-import { URL } from 'url';
 import { QUEUE_NAMES, type WhatsAppSendJob } from '../queue.js';
 import { whatsappService } from '../../modules/whatsapp/whatsapp.service.js';
 import { prisma } from '../../config/database.js';

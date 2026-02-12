@@ -65,7 +65,7 @@ export class AIService {
   /**
    * Detect user intent from message
    */
-  async detectIntent(message: string, _context: ConversationContext): Promise<AIIntent> {
+  async detectIntent(message: string, context: ConversationContext): Promise<AIIntent> {
     const systemPrompt = `Eres un analizador de intenciones. Analiza el mensaje del usuario y determina su intención.
 
 Intenciones posibles:
