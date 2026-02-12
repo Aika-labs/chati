@@ -39,12 +39,12 @@ export function startRAGWorker(): Worker {
     }
   );
 
-  worker.on('completed', (job) => {
-    logger.debug({ jobId: job.id }, 'RAG job completed');
+  worker.on('completed', (_job) => {
+    logger.debug({ jobId: _job.id }, 'RAG job completed');
   });
 
-  worker.on('failed', (job, error) => {
-    logger.error({ jobId: job?.id, error: error.message }, 'RAG job failed');
+  worker.on('failed', (_job, _error) => {
+    logger.error({ jobId: _job?.id, error: _error.message }, 'RAG job failed');
   });
 
   return worker;
