@@ -4,6 +4,11 @@ import { aiService } from '../../modules/ai/ai.service.js';
 import { prisma } from '../../config/database.js';
 import { createModuleLogger } from '../../shared/utils/logger.js';
 import { getSocketEmitter } from '../../modules/realtime/socket.handler.js';
+import { getRedisConnection } from '../../config/redis.js';
+
+const logger = createModuleLogger('ai-worker');
+
+const connection = getRedisConnection();
 
 const logger = createModuleLogger('ai-worker');
 

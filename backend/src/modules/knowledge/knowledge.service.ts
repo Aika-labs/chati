@@ -1,9 +1,11 @@
+// import { google } from 'googleapis'; // TODO: Enable when Google Sheets integration is ready
 import { google } from 'googleapis';
 import * as XLSX from 'xlsx';
 import { prisma } from '../../config/database.js';
 import { supabase } from '../../config/database.js';
 import { createModuleLogger } from '../../shared/utils/logger.js';
 import { AppError } from '../../shared/middleware/error.handler.js';
+import type { Multer } from 'multer';
 
 const logger = createModuleLogger('knowledge');
 
@@ -38,6 +40,7 @@ export class KnowledgeService {
   /**
    * Import products from Excel file
    */
+  async importFromExcel(tenantId: string, file: Multer.File): Promise<{ imported: number }> {
   async importFromExcel(tenantId: string, file: Express.Multer.File): Promise<{ imported: number }> {
     const workbook = XLSX.read(file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
@@ -183,6 +186,7 @@ export class KnowledgeService {
   /**
    * Upload product image
    */
+  async uploadProductImage(tenantId: string, productId: string, file: Multer.File): Promise<string> {
   async uploadProductImage(tenantId: string, productId: string, file: Express.Multer.File): Promise<string> {
     const fileName = `${tenantId}/products/${productId}-${Date.now()}.${file.mimetype.split('/')[1]}`;
 

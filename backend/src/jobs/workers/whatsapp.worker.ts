@@ -4,6 +4,11 @@ import { whatsappService } from '../../modules/whatsapp/whatsapp.service.js';
 import { prisma } from '../../config/database.js';
 import { createModuleLogger } from '../../shared/utils/logger.js';
 import { getSocketEmitter } from '../../modules/realtime/socket.handler.js';
+import { getRedisConnection } from '../../config/redis.js';
+
+const logger = createModuleLogger('whatsapp-worker');
+
+const connection = getRedisConnection();
 
 const logger = createModuleLogger('whatsapp-worker');
 

@@ -36,6 +36,7 @@ export class WhatsAppController {
   async receiveWebhook(
     req: Request,
     res: Response<ApiResponse>,
+    _next: NextFunction
     next: NextFunction
   ): Promise<void> {
     try {

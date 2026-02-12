@@ -99,6 +99,7 @@ export class TenantService {
    * Update WhatsApp configuration
    */
   async updateWhatsAppConfig(tenantId: string, input: UpdateWhatsAppConfigInput) {
+    await prisma.tenant.update({
     const tenant = await prisma.tenant.update({
       where: { id: tenantId },
       data: {
@@ -122,6 +123,7 @@ export class TenantService {
     if (input.googleCalendarId !== undefined) data.googleCalendarId = input.googleCalendarId;
     if (input.googleSheetId !== undefined) data.googleSheetId = input.googleSheetId;
 
+    await prisma.tenant.update({
     const tenant = await prisma.tenant.update({
       where: { id: tenantId },
       data,

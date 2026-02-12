@@ -6,6 +6,13 @@ import { AppError, ValidationError } from '../../shared/middleware/error.handler
 import Groq from 'groq-sdk';
 import pdfParse from 'pdf-parse';
 import * as XLSX from 'xlsx';
+import type { Multer } from 'multer';
+
+const logger = createModuleLogger('rag');
+
+// Groq client for future embeddings support
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _groq = new Groq({ apiKey: env.GROQ_API_KEY });
 
 const logger = createModuleLogger('rag');
 
@@ -36,6 +43,7 @@ export class RAGService {
    */
   async uploadDocument(
     tenantId: string,
+    file: Multer.File
     file: Express.Multer.File
   ): Promise<DocumentUploadResult> {
     // Check document limit

@@ -2,6 +2,11 @@ import { Worker, Job } from 'bullmq';
 import { QUEUE_NAMES, type RAGIndexingJob } from '../queue.js';
 import { ragService } from '../../modules/rag/rag.service.js';
 import { createModuleLogger } from '../../shared/utils/logger.js';
+import { getRedisConnection } from '../../config/redis.js';
+
+const logger = createModuleLogger('rag-worker');
+
+const connection = getRedisConnection();
 
 const logger = createModuleLogger('rag-worker');
 
