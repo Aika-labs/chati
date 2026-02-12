@@ -26,6 +26,13 @@ export default [
         module: 'readonly',
         require: 'readonly',
         exports: 'readonly',
+        // Node.js built-in globals
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        fetch: 'readonly',
+        RequestInit: 'readonly',
+        Response: 'readonly',
+        Headers: 'readonly',
       },
     },
     plugins: {

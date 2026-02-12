@@ -1,6 +1,5 @@
 import { redis } from '../../config/redis.js';
 import { prisma } from '../../config/database.js';
-import { RateLimitError } from '../../shared/middleware/error.handler.js';
 import { createModuleLogger } from '../../shared/utils/logger.js';
 import { env } from '../../config/env.js';
 

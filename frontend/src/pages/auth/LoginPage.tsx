@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { MessageCircle, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { MessageCircle, Mail, Lock, Eye, EyeOff, Chrome } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth.store';
+
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000/api';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -106,6 +108,31 @@ export function LoginPage() {
               Iniciar Sesión
             </Button>
           </form>
+
+          {/* Divider */}
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-gray-500">O continúa con</span>
+            </div>
+          </div>
+
+          {/* Social Login Buttons */}
+          <div className="space-y-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              leftIcon={<Chrome className="w-5 h-5" />}
+              onClick={() => {
+                window.location.href = `${API_URL}/auth/google`;
+              }}
+            >
+              Continuar con Google
+            </Button>
+          </div>
 
           <p className="mt-8 text-center text-sm text-gray-600">
             ¿No tienes cuenta?{' '}
