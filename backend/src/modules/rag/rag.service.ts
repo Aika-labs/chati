@@ -3,13 +3,12 @@ import { supabase } from '../../config/database.js';
 import { env } from '../../config/env.js';
 import { createModuleLogger } from '../../shared/utils/logger.js';
 import { AppError, ValidationError } from '../../shared/middleware/error.handler.js';
-import Groq from 'groq-sdk';
 import pdfParse from 'pdf-parse';
 import * as XLSX from 'xlsx';
 
 const logger = createModuleLogger('rag');
 
-const groq = new Groq({ apiKey: env.GROQ_API_KEY });
+// Groq SDK reserved for future embedding API integration
 
 // Embedding dimensions for text-embedding-3-small equivalent
 const EMBEDDING_DIMENSIONS = 1536;
@@ -36,7 +35,7 @@ export class RAGService {
    */
   async uploadDocument(
     tenantId: string,
-    file: Express.Multer.File
+    file: { buffer: Buffer; mimetype: string; originalname: string; size: number }
   ): Promise<DocumentUploadResult> {
     // Check document limit
     const docCount = await prisma.document.count({ where: { tenantId } });

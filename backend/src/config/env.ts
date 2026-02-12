@@ -5,6 +5,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().default('4000').transform(Number),
   HOST: z.string().default('0.0.0.0'),
+  FRONTEND_URL: z.string().url().default('http://localhost:5173'),
 
   // Database (Supabase)
   DATABASE_URL: z.string().url(),
@@ -28,14 +29,15 @@ const envSchema = z.object({
   // Groq AI
   GROQ_API_KEY: z.string().startsWith('gsk_'),
 
-  // Google Calendar
+  // Google OAuth (for login, Calendar, Sheets)
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REDIRECT_URI: z.string().url().optional(),
 
-  // Google Sheets
-  GOOGLE_SERVICE_ACCOUNT_EMAIL: z.string().email().optional(),
-  GOOGLE_SERVICE_ACCOUNT_KEY: z.string().optional(),
+  // Clerk Authentication
+  CLERK_SECRET_KEY: z.string().optional(),
+  CLERK_PUBLISHABLE_KEY: z.string().optional(),
+  CLERK_WEBHOOK_SECRET: z.string().optional(),
 
   // Rate Limiting
   RATE_LIMIT_OUTBOUND_MESSAGES_PER_DAY: z.string().default('250').transform(Number),

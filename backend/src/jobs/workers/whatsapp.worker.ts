@@ -86,12 +86,12 @@ export function startWhatsAppWorker(): Worker {
     }
   );
 
-  worker.on('completed', (job) => {
-    logger.debug({ jobId: job.id }, 'WhatsApp job completed');
+  worker.on('completed', (_job) => {
+    logger.debug({ jobId: _job.id }, 'WhatsApp job completed');
   });
 
-  worker.on('failed', (job, error) => {
-    logger.error({ jobId: job?.id, error: error.message }, 'WhatsApp job failed');
+  worker.on('failed', (_job, _error) => {
+    logger.error({ jobId: _job?.id, error: _error.message }, 'WhatsApp job failed');
   });
 
   return worker;

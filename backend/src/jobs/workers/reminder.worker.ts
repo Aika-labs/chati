@@ -81,12 +81,12 @@ ${appointment.service ? `💼 Servicio: ${appointment.service.name}` : ''}
     }
   );
 
-  worker.on('completed', (job) => {
-    logger.debug({ jobId: job.id }, 'Reminder job completed');
+  worker.on('completed', (_job) => {
+    logger.debug({ jobId: _job.id }, 'Reminder job completed');
   });
 
-  worker.on('failed', (job, error) => {
-    logger.error({ jobId: job?.id, error: error.message }, 'Reminder job failed');
+  worker.on('failed', (_job, _error) => {
+    logger.error({ jobId: _job?.id, error: _error.message }, 'Reminder job failed');
   });
 
   return worker;
