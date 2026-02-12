@@ -1,0 +1,10 @@
+config:
+  chati-infra:domain: chati.example.com
+  chati-infra:acmeEmail: admin@example.com
+  chati-infra:serverType: cpx31
+  chati-infra:location: nbg1
+  chati-infra:sshPublicKey: "ssh-rsa PLACEHOLDER_SSH_PUBLIC_KEY"
+  chati-infra:sshPrivateKey:
+    secure: PLACEHOLDER_ENCRYPTED_PRIVATE_KEY
+  hcloud:token:
+    secure: PLACEHOLDER_ENCRYPTED_HCLOUD_TOKEN

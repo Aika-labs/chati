@@ -1,0 +1,92 @@
+version: '3.8'
+
+# Development docker-compose with local services
+services:
+  # Backend API with hot reload
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: chati-backend-dev
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://chati:chati_dev@postgres:5432/chati_dev
+      - SUPABASE_URL=${SUPABASE_URL:-http://localhost:54321}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-dev-anon-key}
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=dev-jwt-secret-change-in-production
+      - JWT_REFRESH_SECRET=dev-refresh-secret-change-in-production
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - WHATSAPP_VERIFY_TOKEN=dev-verify-token
+      - LOG_LEVEL=debug
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/src:/app/src:ro
+      - ./backend/prisma:/app/prisma:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - chati-dev-network
+
+  # Local PostgreSQL with pgvector
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: chati-postgres-dev
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=chati
+      - POSTGRES_PASSWORD=chati_dev
+      - POSTGRES_DB=chati_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+    networks:
+      - chati-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chati -d chati_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and queues
+  redis:
+    image: redis:7-alpine
+    container_name: chati-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - chati-dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Commander (optional UI for Redis)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: chati-redis-ui
+    restart: unless-stopped
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - chati-dev-network
+
+networks:
+  chati-dev-network:
+    driver: bridge
+
+volumes:
+  postgres-dev-data:

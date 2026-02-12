@@ -1,0 +1,89 @@
+# Pulumi ESC Environment for Chati Production
+# Usage: pulumi env init Aika-labs-org/chati/prod
+# Then: pulumi env edit --file esc/chati-prod.yaml Aika-labs-org/chati/prod
+
+imports:
+  # Import base configuration from dev (override secrets below)
+  - chati/dev
+
+values:
+  # ===========================================
+  # Production Overrides
+  # ===========================================
+  app:
+    environment: production
+    domain: chati.yourdomain.com
+    logLevel: info
+
+  # ===========================================
+  # Production Database - Supabase
+  # ===========================================
+  supabase:
+    url:
+      fn::secret: "https://YOUR_PROD_PROJECT.supabase.co"
+    anonKey:
+      fn::secret: "your-prod-supabase-anon-key"
+    databaseUrl:
+      fn::secret: "postgresql://postgres:YOUR_PROD_PASSWORD@db.YOUR_PROD_PROJECT.supabase.co:5432/postgres"
+
+  # ===========================================
+  # Production AI - Groq API
+  # ===========================================
+  groq:
+    apiKey:
+      fn::secret: "gsk_your_prod_groq_api_key"
+
+  # ===========================================
+  # Production WhatsApp Business API
+  # ===========================================
+  whatsapp:
+    verifyToken:
+      fn::secret: "your-prod-webhook-verify-token"
+
+  # ===========================================
+  # Production Google APIs
+  # ===========================================
+  google:
+    clientId:
+      fn::secret: "your-prod-google-client-id.apps.googleusercontent.com"
+    clientSecret:
+      fn::secret: "your-prod-google-client-secret"
+
+  # ===========================================
+  # Production Authentication
+  # ===========================================
+  jwt:
+    secret:
+      fn::secret: "GENERATE_STRONG_SECRET_MIN_64_CHARS_FOR_PRODUCTION"
+    refreshSecret:
+      fn::secret: "GENERATE_STRONG_REFRESH_SECRET_MIN_64_CHARS_FOR_PRODUCTION"
+
+  # ===========================================
+  # Production Hetzner Cloud
+  # ===========================================
+  hcloud:
+    token:
+      fn::secret: "your-prod-hetzner-cloud-api-token"
+
+  # ===========================================
+  # Production SSH Keys
+  # ===========================================
+  ssh:
+    publicKey: "ssh-rsa YOUR_PROD_PUBLIC_KEY"
+    privateKey:
+      fn::secret: |
+        -----BEGIN OPENSSH PRIVATE KEY-----
+        YOUR_PROD_PRIVATE_KEY_HERE
+        -----END OPENSSH PRIVATE KEY-----
+
+  # ===========================================
+  # Production Pulumi Stack Configuration
+  # ===========================================
+  pulumiConfig:
+    hcloud:token: ${hcloud.token}
+    chati-infra:domain: ${app.domain}
+    chati-infra:acmeEmail: "admin@yourdomain.com"
+    chati-infra:serverType: "cpx41"  # Larger server for production
+    chati-infra:location: "nbg1"
+    chati-infra:sshPublicKey: ${ssh.publicKey}
+    chati-infra:sshPrivateKey: ${ssh.privateKey}
