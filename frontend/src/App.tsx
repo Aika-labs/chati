@@ -6,10 +6,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LandingPage } from './pages/landing/LandingPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
+import { AuthCallbackPage } from './pages/auth/AuthCallbackPage';
 import { DashboardHome } from './pages/dashboard/DashboardHome';
 import { ConversationsPage } from './pages/dashboard/ConversationsPage';
 import { ContactsPage } from './pages/dashboard/ContactsPage';
 import { CalendarPage } from './pages/dashboard/CalendarPage';
+import { DocumentsPage } from './pages/dashboard/DocumentsPage';
+import { ProductsPage } from './pages/dashboard/ProductsPage';
+import { SettingsPage } from './pages/dashboard/SettingsPage';
 
 // Layout
 import { DashboardLayout } from './components/layout';
@@ -91,6 +95,9 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
+      
+      {/* OAuth callback - no auth check needed */}
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
       {/* Protected dashboard routes */}
       <Route
@@ -105,26 +112,14 @@ function AppRoutes() {
         <Route path="conversations" element={<ConversationsPage />} />
         <Route path="contacts" element={<ContactsPage />} />
         <Route path="calendar" element={<CalendarPage />} />
-        <Route path="products" element={<PlaceholderPage title="Productos" />} />
-        <Route path="documents" element={<PlaceholderPage title="Documentos" />} />
-        <Route path="settings" element={<PlaceholderPage title="Configuración" />} />
+        <Route path="products" element={<ProductsPage />} />
+        <Route path="documents" element={<DocumentsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  );
-}
-
-// Placeholder for pages not yet implemented
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">{title}</h1>
-      <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-        <p className="text-gray-500">Esta página está en desarrollo</p>
-      </div>
-    </div>
   );
 }
 
