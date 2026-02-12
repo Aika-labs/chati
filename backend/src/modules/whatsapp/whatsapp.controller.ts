@@ -8,7 +8,6 @@ import {
 } from './whatsapp.service.js';
 import { whatsappWebhookHandler, type ProcessedInboundMessage } from './whatsapp.webhook.js';
 import { aiService } from '../ai/ai.service.js';
-import { autoReplyService } from '../autoreply/autoreply.service.js';
 import { prisma } from '../../config/database.js';
 import { emitToTenant } from '../realtime/socket.handler.js';
 import type { ApiResponse, WhatsAppWebhookPayload } from '../../shared/types/index.js';
@@ -74,7 +73,7 @@ export class WhatsAppController {
   }
 
   /**
-   * Process a message with auto-reply or AI
+   * Process a message with AI and send automatic response
    */
   private async processMessageWithAI(message: ProcessedInboundMessage): Promise<void> {
     try {
@@ -95,19 +94,7 @@ export class WhatsAppController {
         return;
       }
 
-      // ============================================
-      // STEP 1: Try auto-reply first (no AI tokens)
-      // ============================================
-      const autoReplyMatch = await autoReplyService.findMatch(message.tenantId, message.content);
-
-      if (autoReplyMatch.matched && autoReplyMatch.reply) {
-        await this.sendAutoReply(message, autoReplyMatch.reply, autoReplyMatch.ruleName);
-        return;
-      }
-
-      // ============================================
-      // STEP 2: Fall back to AI processing
-      // ============================================
+      // Generate AI response
       const aiResponse = await aiService.processMessage(
         message.tenantId,
         message.conversationId,
@@ -175,64 +162,9 @@ export class WhatsAppController {
         shouldHandoff: aiResponse.shouldHandoff,
       }, 'AI response sent');
     } catch (error) {
-      logger.error({ error, messageId: message.messageId }, 'Failed to process message');
+      logger.error({ error, messageId: message.messageId }, 'Failed to process message with AI');
       // Don't throw - we don't want to break the webhook processing
     }
-  }
-
-  /**
-   * Send an auto-reply (no AI tokens used)
-   */
-  private async sendAutoReply(
-    message: ProcessedInboundMessage,
-    reply: string,
-    ruleName?: string
-  ): Promise<void> {
-    // Send response via WhatsApp
-    const { messageId: waMessageId } = await whatsappService.sendTextMessage(
-      message.tenantId,
-      {
-        to: message.from,
-        message: reply,
-      }
-    );
-
-    // Save outbound message to database
-    const outboundMessage = await prisma.message.create({
-      data: {
-        tenantId: message.tenantId,
-        conversationId: message.conversationId,
-        direction: 'OUTBOUND',
-        type: 'TEXT',
-        content: reply,
-        waMessageId,
-        waStatus: 'SENT',
-        isAiGenerated: false, // Not AI generated - it's an auto-reply
-        aiIntent: 'auto_reply',
-      },
-    });
-
-    // Update conversation
-    await prisma.conversation.update({
-      where: { id: message.conversationId },
-      data: { lastMessageAt: new Date() },
-    });
-
-    // Emit outbound message event
-    emitToTenant(message.tenantId, 'new_message', {
-      conversationId: message.conversationId,
-      messageId: outboundMessage.id,
-      direction: 'OUTBOUND',
-      content: reply,
-      isAiGenerated: false,
-      isAutoReply: true,
-    });
-
-    logger.info({
-      tenantId: message.tenantId,
-      conversationId: message.conversationId,
-      ruleName,
-    }, 'Auto-reply sent (no AI tokens used)');
   }
 
   /**
