@@ -4,7 +4,6 @@ import {
   ChevronRight, 
   Plus,
   Clock,
-  User,
   MoreHorizontal,
   Check,
   X as XIcon

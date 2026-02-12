@@ -7,7 +7,6 @@ import {
   MoreHorizontal,
   Mail,
   Phone,
-  Tag,
   MessageSquare,
   Calendar,
   ChevronLeft,
@@ -15,12 +14,12 @@ import {
   X
 } from 'lucide-react';
 import { Header } from '../../components/layout';
-import { Button, Avatar, Badge, Card, Input } from '../../components/ui';
+import { Button, Avatar, Badge, Card } from '../../components/ui';
 import { cn, formatDate, formatPhone } from '../../lib/utils';
-import type { Contact, Tag as TagType } from '../../types';
+import type { Contact, Tag } from '../../types';
 
 // Mock data
-const mockTags: TagType[] = [
+const mockTags: Tag[] = [
   { id: '1', name: 'VIP', color: 'yellow' },
   { id: '2', name: 'Nuevo', color: 'green' },
   { id: '3', name: 'Interesado', color: 'blue' },

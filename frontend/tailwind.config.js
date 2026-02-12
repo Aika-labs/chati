@@ -20,12 +20,6 @@ export default {
           900: '#14532d',
           950: '#052e16',
         },
-        whatsapp: {
-          light: '#dcf8c6',
-          dark: '#075e54',
-          teal: '#128c7e',
-          blue: '#34b7f1',
-        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

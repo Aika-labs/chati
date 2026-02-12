@@ -2,6 +2,24 @@ version: '3.8'
 
 # Development docker-compose with local services
 services:
+  # Frontend React app with hot reload
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: chati-frontend-dev
+    restart: unless-stopped
+    environment:
+      - VITE_API_URL=http://localhost:3000/api
+      - VITE_WS_URL=http://localhost:3000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    networks:
+      - chati-dev-network
+
   # Backend API with hot reload
   backend:
     build:
