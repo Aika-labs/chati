@@ -1,0 +1,7 @@
+name: chati-infra
+runtime: nodejs
+description: Chati SaaS Infrastructure on Hetzner VPS
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: typescript

@@ -1,0 +1,119 @@
+# Pulumi ESC Environment for Chati Development
+# Usage: pulumi env init Aika-labs-org/chati/dev
+# Then: pulumi env edit --file esc/chati-dev.yaml Aika-labs-org/chati/dev
+
+values:
+  # ===========================================
+  # Application Configuration
+  # ===========================================
+  app:
+    environment: development
+    domain: chati-dev.example.com
+    logLevel: debug
+
+  # ===========================================
+  # Database - Supabase
+  # ===========================================
+  supabase:
+    url:
+      fn::secret: "https://YOUR_PROJECT.supabase.co"
+    anonKey:
+      fn::secret: "your-supabase-anon-key"
+    databaseUrl:
+      fn::secret: "postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT.supabase.co:5432/postgres"
+
+  # ===========================================
+  # AI - Groq API
+  # ===========================================
+  groq:
+    apiKey:
+      fn::secret: "gsk_your_groq_api_key"
+
+  # ===========================================
+  # WhatsApp Business API
+  # ===========================================
+  whatsapp:
+    verifyToken:
+      fn::secret: "your-webhook-verify-token"
+    # Note: Access tokens are stored per-tenant in database
+
+  # ===========================================
+  # Google APIs (Calendar, Sheets)
+  # ===========================================
+  google:
+    clientId:
+      fn::secret: "your-google-client-id.apps.googleusercontent.com"
+    clientSecret:
+      fn::secret: "your-google-client-secret"
+
+  # ===========================================
+  # Authentication
+  # ===========================================
+  jwt:
+    secret:
+      fn::secret: "dev-jwt-secret-change-in-production-min-32-chars"
+    refreshSecret:
+      fn::secret: "dev-refresh-secret-change-in-production-min-32-chars"
+
+  # ===========================================
+  # Hetzner Cloud (Infrastructure)
+  # ===========================================
+  hcloud:
+    token:
+      fn::secret: "your-hetzner-cloud-api-token"
+
+  # ===========================================
+  # SSH Keys for Deployment
+  # ===========================================
+  ssh:
+    publicKey: "ssh-rsa YOUR_PUBLIC_KEY"
+    privateKey:
+      fn::secret: |
+        -----BEGIN OPENSSH PRIVATE KEY-----
+        YOUR_PRIVATE_KEY_HERE
+        -----END OPENSSH PRIVATE KEY-----
+
+  # ===========================================
+  # Environment Variables Export
+  # ===========================================
+  environmentVariables:
+    # Application
+    NODE_ENV: ${app.environment}
+    LOG_LEVEL: ${app.logLevel}
+    
+    # Database
+    DATABASE_URL: ${supabase.databaseUrl}
+    SUPABASE_URL: ${supabase.url}
+    SUPABASE_ANON_KEY: ${supabase.anonKey}
+    
+    # AI
+    GROQ_API_KEY: ${groq.apiKey}
+    
+    # WhatsApp
+    WHATSAPP_VERIFY_TOKEN: ${whatsapp.verifyToken}
+    
+    # Google
+    GOOGLE_CLIENT_ID: ${google.clientId}
+    GOOGLE_CLIENT_SECRET: ${google.clientSecret}
+    
+    # JWT
+    JWT_SECRET: ${jwt.secret}
+    JWT_REFRESH_SECRET: ${jwt.refreshSecret}
+    
+    # Hetzner
+    HCLOUD_TOKEN: ${hcloud.token}
+
+  # ===========================================
+  # Pulumi Stack Configuration
+  # ===========================================
+  pulumiConfig:
+    # Hetzner provider
+    hcloud:token: ${hcloud.token}
+    
+    # Chati infrastructure config
+    chati-infra:domain: ${app.domain}
+    chati-infra:acmeEmail: "admin@example.com"
+    chati-infra:serverType: "cpx31"
+    chati-infra:location: "nbg1"
+    chati-infra:sshPublicKey: ${ssh.publicKey}
+    chati-infra:sshPrivateKey: ${ssh.privateKey}
