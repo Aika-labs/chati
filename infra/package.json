@@ -1,0 +1,18 @@
+{
+  "name": "chati-infra",
+  "version": "1.0.0",
+  "description": "Chati SaaS Infrastructure on Hetzner",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "@pulumi/pulumi": "^3.0.0",
+    "@pulumi/hcloud": "^1.0.0",
+    "@pulumi/command": "^1.0.0"
+  }
+}
