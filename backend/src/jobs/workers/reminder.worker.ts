@@ -5,11 +5,13 @@ import { prisma } from '../../config/database.js';
 import { createModuleLogger } from '../../shared/utils/logger.js';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { getRedisConnection } from '../../config/redis.js';
 
 const logger = createModuleLogger('reminder-worker');
 
-const connection = getRedisConnection();
+const connection = {
+  host: new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').hostname,
+  port: parseInt(new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').port || '6379'),
+};
 
 export function startReminderWorker(): Worker {
   const worker = new Worker<ReminderJob>(
