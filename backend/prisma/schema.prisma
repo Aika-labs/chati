@@ -65,6 +65,7 @@ model Tenant {
   products      Product[]
   services      Service[]
   usageRecords  UsageRecord[]
+  autoReplies   AutoReply[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -441,6 +442,51 @@ enum DocumentStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+// ============================================
+// AUTO-REPLIES (FAQ / Quick Responses)
+// ============================================
+
+model AutoReply {
+  id          String        @id @default(cuid())
+  name        String        // Friendly name for the rule
+  isActive    Boolean       @default(true)
+  priority    Int           @default(0) // Higher = checked first
+  
+  // Trigger conditions
+  triggerType AutoReplyTrigger @default(KEYWORD)
+  keywords    String[]      // Keywords to match (any match triggers)
+  pattern     String?       // Regex pattern (for PATTERN type)
+  
+  // Response
+  response    String        // The auto-reply message
+  
+  // Options
+  caseSensitive Boolean     @default(false)
+  exactMatch    Boolean     @default(false) // Require exact match vs contains
+  
+  // Stats
+  timesTriggered Int        @default(0)
+  lastTriggeredAt DateTime?
+  
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([isActive])
+  @@index([priority])
+}
+
+enum AutoReplyTrigger {
+  KEYWORD    // Match any keyword in the list
+  PATTERN    // Match regex pattern
+  GREETING   // Built-in greeting detection
+  THANKS     // Built-in thanks detection
+  GOODBYE    // Built-in goodbye detection
 }
 
 // ============================================
