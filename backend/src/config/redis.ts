@@ -1,40 +1,33 @@
 import Redis from 'ioredis';
-import { env } from './env.js';
+import { createModuleLogger } from '../shared/utils/logger.js';
 
-export const redis = new Redis(env.REDIS_URL, {
-  maxRetriesPerRequest: 3,
-  retryStrategy(times) {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
-  },
-  reconnectOnError(err) {
-    const targetError = 'READONLY';
-    if (err.message.includes(targetError)) {
-      return true;
-    }
-    return false;
-  },
+const logger = createModuleLogger('redis');
+
+const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
+
+export const redis = new Redis(REDIS_URL, {
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
 });
 
 redis.on('connect', () => {
-  console.log('✅ Redis connected');
+  logger.info('Connected to Redis');
 });
 
-redis.on('error', (err) => {
-  console.error('❌ Redis error:', err.message);
+redis.on('error', (error) => {
+  logger.error({ error }, 'Redis connection error');
 });
 
-// Pub/Sub clients for real-time events
-export const redisPub = redis.duplicate();
-export const redisSub = redis.duplicate();
+// Parse Redis URL for BullMQ connection config
+export function getRedisConnection(): { host: string; port: number } {
+  const url = new globalThis.URL(REDIS_URL);
+  return {
+    host: url.hostname,
+    port: parseInt(url.port || '6379', 10),
+  };
+}
 
-// Health check
-export async function checkRedisConnection(): Promise<boolean> {
-  try {
-    const pong = await redis.ping();
-    return pong === 'PONG';
-  } catch (error) {
-    console.error('Redis connection failed:', error);
-    return false;
-  }
+export async function closeRedis(): Promise<void> {
+  await redis.quit();
+  logger.info('Redis connection closed');
 }

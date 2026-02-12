@@ -6,10 +6,13 @@ import { AppError, ValidationError } from '../../shared/middleware/error.handler
 import Groq from 'groq-sdk';
 import pdfParse from 'pdf-parse';
 import * as XLSX from 'xlsx';
+import type { Multer } from 'multer';
 
 const logger = createModuleLogger('rag');
 
-const groq = new Groq({ apiKey: env.GROQ_API_KEY });
+// Groq client for future embeddings support
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _groq = new Groq({ apiKey: env.GROQ_API_KEY });
 
 // Embedding dimensions for text-embedding-3-small equivalent
 const EMBEDDING_DIMENSIONS = 1536;
@@ -36,7 +39,7 @@ export class RAGService {
    */
   async uploadDocument(
     tenantId: string,
-    file: Express.Multer.File
+    file: Multer.File
   ): Promise<DocumentUploadResult> {
     // Check document limit
     const docCount = await prisma.document.count({ where: { tenantId } });

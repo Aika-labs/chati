@@ -2,13 +2,11 @@ import { Worker, Job } from 'bullmq';
 import { QUEUE_NAMES, type RAGIndexingJob } from '../queue.js';
 import { ragService } from '../../modules/rag/rag.service.js';
 import { createModuleLogger } from '../../shared/utils/logger.js';
+import { getRedisConnection } from '../../config/redis.js';
 
 const logger = createModuleLogger('rag-worker');
 
-const connection = {
-  host: new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').hostname,
-  port: parseInt(new URL(process.env.REDIS_URL ?? 'redis://localhost:6379').port || '6379'),
-};
+const connection = getRedisConnection();
 
 export function startRAGWorker(): Worker {
   const worker = new Worker<RAGIndexingJob>(
