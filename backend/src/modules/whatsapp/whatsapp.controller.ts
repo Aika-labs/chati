@@ -36,7 +36,7 @@ export class WhatsAppController {
   async receiveWebhook(
     req: Request,
     res: Response<ApiResponse>,
-    next: NextFunction
+    _next: NextFunction
   ): Promise<void> {
     try {
       // Always respond quickly to Meta
