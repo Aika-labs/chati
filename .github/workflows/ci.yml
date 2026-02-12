@@ -87,7 +87,7 @@ jobs:
           cache-dependency-path: infra/package-lock.json
 
       - name: Install Pulumi CLI
-        uses: pulumi/actions@v5
+        uses: pulumi/setup-pulumi-action@v2
 
       - name: Install dependencies
         working-directory: infra
