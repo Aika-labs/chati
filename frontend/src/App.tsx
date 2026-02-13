@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useAuth, useUser } from '@clerk/clerk-react';
 
 // Pages
 import { LandingPage } from './pages/landing/LandingPage';
-import { LoginPage } from './pages/auth/LoginPage';
-import { RegisterPage } from './pages/auth/RegisterPage';
-import { AuthCallbackPage } from './pages/auth/AuthCallbackPage';
+import { SignInPage } from './pages/auth/SignInPage';
+import { SignUpPage } from './pages/auth/SignUpPage';
+import { PlanSelectionPage } from './pages/onboarding/PlanSelectionPage';
+import { CheckoutSuccessPage } from './pages/onboarding/CheckoutSuccessPage';
+import { OnboardingWizardPage } from './pages/onboarding/OnboardingWizardPage';
 import { DashboardHome } from './pages/dashboard/DashboardHome';
 import { ConversationsPage } from './pages/dashboard/ConversationsPage';
 import { ContactsPage } from './pages/dashboard/ContactsPage';
@@ -14,6 +17,9 @@ import { CalendarPage } from './pages/dashboard/CalendarPage';
 import { DocumentsPage } from './pages/dashboard/DocumentsPage';
 import { ProductsPage } from './pages/dashboard/ProductsPage';
 import { SettingsPage } from './pages/dashboard/SettingsPage';
+import { TemplatesPage } from './pages/dashboard/TemplatesPage';
+import { ChatbotPreviewPage } from './pages/dashboard/ChatbotPreviewPage';
+import { ReportsPage } from './pages/dashboard/ReportsPage';
 
 // Layout
 import { DashboardLayout } from './components/layout';
@@ -30,11 +36,11 @@ const queryClient = new QueryClient({
   },
 });
 
-// Protected Route wrapper
+// Protected Route wrapper using Clerk
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isLoaded, isSignedIn } = useAuth();
 
-  if (isLoading) {
+  if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
@@ -42,8 +48,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+  if (!isSignedIn) {
+    return <Navigate to="/sign-in" replace />;
   }
 
   return <>{children}</>;
@@ -51,9 +57,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // Public Route wrapper (redirect if authenticated)
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isLoaded, isSignedIn } = useAuth();
 
-  if (isLoading) {
+  if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
@@ -61,65 +67,120 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (isAuthenticated) {
+  if (isSignedIn) {
     return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
 }
 
-function AppRoutes() {
-  const { refreshUser } = useAuthStore();
+// Sync Clerk auth with backend
+function AuthSync() {
+  const { isSignedIn, getToken } = useAuth();
+  const { user } = useUser();
+  const { syncWithClerk, logout } = useAuthStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    refreshUser();
-  }, [refreshUser]);
+    async function sync() {
+      if (isSignedIn && user) {
+        try {
+          const token = await getToken();
+          if (token) {
+            await syncWithClerk(token);
+          }
+        } catch (error) {
+          console.error('Failed to sync with backend:', error);
+        }
+      } else if (!isSignedIn) {
+        logout();
+      }
+    }
+    sync();
+  }, [isSignedIn, user, getToken, syncWithClerk, logout, navigate]);
 
+  return null;
+}
+
+function AppRoutes() {
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/" element={<LandingPage />} />
-      <Route
-        path="/login"
-        element={
-          <PublicRoute>
-            <LoginPage />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/register"
-        element={
-          <PublicRoute>
-            <RegisterPage />
-          </PublicRoute>
-        }
-      />
-      
-      {/* OAuth callback - no auth check needed */}
-      <Route path="/auth/callback" element={<AuthCallbackPage />} />
+    <>
+      <AuthSync />
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<LandingPage />} />
+        <Route
+          path="/sign-in/*"
+          element={
+            <PublicRoute>
+              <SignInPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/sign-up/*"
+          element={
+            <PublicRoute>
+              <SignUpPage />
+            </PublicRoute>
+          }
+        />
+        
+        {/* Legacy routes - redirect to new ones */}
+        <Route path="/login" element={<Navigate to="/sign-in" replace />} />
+        <Route path="/register" element={<Navigate to="/sign-up" replace />} />
 
-      {/* Protected dashboard routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<DashboardHome />} />
-        <Route path="conversations" element={<ConversationsPage />} />
-        <Route path="contacts" element={<ContactsPage />} />
-        <Route path="calendar" element={<CalendarPage />} />
-        <Route path="products" element={<ProductsPage />} />
-        <Route path="documents" element={<DocumentsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
-      </Route>
+        {/* Onboarding routes (protected) */}
+        <Route
+          path="/onboarding/plan"
+          element={
+            <ProtectedRoute>
+              <PlanSelectionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding/success"
+          element={
+            <ProtectedRoute>
+              <CheckoutSuccessPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding/setup"
+          element={
+            <ProtectedRoute>
+              <OnboardingWizardPage />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Catch all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Protected dashboard routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<DashboardHome />} />
+          <Route path="conversations" element={<ConversationsPage />} />
+          <Route path="contacts" element={<ContactsPage />} />
+          <Route path="calendar" element={<CalendarPage />} />
+          <Route path="products" element={<ProductsPage />} />
+          <Route path="documents" element={<DocumentsPage />} />
+          <Route path="templates" element={<TemplatesPage />} />
+          <Route path="chatbot" element={<ChatbotPreviewPage />} />
+          <Route path="reports" element={<ReportsPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+
+        {/* Catch all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }
 

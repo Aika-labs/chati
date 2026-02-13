@@ -20,6 +20,11 @@ import { contactsRoutes } from './modules/contacts/contacts.routes.js';
 import { ragRoutes } from './modules/rag/rag.routes.js';
 import { knowledgeRoutes } from './modules/knowledge/knowledge.routes.js';
 import { autoReplyRoutes } from './modules/autoreply/autoreply.routes.js';
+import { billingRoutes } from './modules/billing/billing.routes.js';
+import { templatesRoutes } from './modules/templates/templates.routes.js';
+import { apiKeysRoutes } from './modules/api-keys/api-keys.routes.js';
+import { publicApiRoutes } from './modules/public-api/public-api.routes.js';
+import { docsRoutes } from './modules/docs/docs.routes.js';
 
 // Import Socket.io handler
 import { setupSocketHandlers } from './modules/realtime/socket.handler.js';
@@ -78,6 +83,11 @@ app.use('/api/contacts', contactsRoutes);
 app.use('/api/rag', ragRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/autoreply', autoReplyRoutes);
+app.use('/api/billing', billingRoutes);
+app.use('/api/templates', templatesRoutes);
+app.use('/api/api-keys', apiKeysRoutes);
+app.use('/api/v1', publicApiRoutes);
+app.use('/api/docs', docsRoutes);
 
 // 404 handler
 app.use((_req, res) => {
