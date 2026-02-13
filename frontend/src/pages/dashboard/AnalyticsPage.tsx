@@ -51,11 +51,38 @@ interface AnalyticsData {
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
+// Helper to generate initial date range
+const getInitialDateRange = () => {
+  const now = Date.now();
+  return {
+    from: new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    to: new Date(now).toISOString().split('T')[0],
+  };
+};
+
+// Generate mock data outside component to avoid impure function calls during render
+const generateMockMessagesByDay = () => {
+  const now = Date.now();
+  return Array.from({ length: 30 }, (_, i) => ({
+    date: new Date(now - (29 - i) * 24 * 60 * 60 * 1000).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }),
+    inbound: Math.floor(Math.random() * 200) + 100,
+    outbound: Math.floor(Math.random() * 150) + 80,
+  }));
+};
+
+const generateMockTopHours = () => {
+  return Array.from({ length: 24 }, (_, i) => ({
+    hour: `${i.toString().padStart(2, '0')}:00`,
+    messages: Math.floor(Math.random() * 100) + (i >= 9 && i <= 18 ? 50 : 10),
+  }));
+};
+
+// Pre-generate mock data
+const MOCK_MESSAGES_BY_DAY = generateMockMessagesByDay();
+const MOCK_TOP_HOURS = generateMockTopHours();
+
 export function AnalyticsPage() {
-  const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    to: new Date().toISOString().split('T')[0],
-  });
+  const [dateRange, setDateRange] = useState(getInitialDateRange);
 
   // Fetch analytics data
   const { data, isLoading } = useQuery({
@@ -80,11 +107,7 @@ export function AnalyticsPage() {
       totalAppointments: 89,
       appointmentsChange: -3.1,
     },
-    messagesByDay: Array.from({ length: 30 }, (_, i) => ({
-      date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }),
-      inbound: Math.floor(Math.random() * 200) + 100,
-      outbound: Math.floor(Math.random() * 150) + 80,
-    })),
+    messagesByDay: MOCK_MESSAGES_BY_DAY,
     conversationsByStatus: [
       { status: 'Abiertas', count: 45 },
       { status: 'Cerradas', count: 120 },
@@ -96,10 +119,7 @@ export function AnalyticsPage() {
       { status: 'Completadas', count: 42 },
       { status: 'Canceladas', count: 4 },
     ],
-    topHours: Array.from({ length: 24 }, (_, i) => ({
-      hour: `${i.toString().padStart(2, '0')}:00`,
-      messages: Math.floor(Math.random() * 100) + (i >= 9 && i <= 18 ? 50 : 10),
-    })),
+    topHours: MOCK_TOP_HOURS,
     aiVsHuman: { ai: 78, human: 22 },
     responseTime: { average: 45, median: 32 },
   };

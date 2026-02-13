@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
@@ -73,11 +73,8 @@ export function AIPersonalityPage() {
     },
   });
 
-  useEffect(() => {
-    if (savedConfig) {
-      setConfig(savedConfig);
-    }
-  }, [savedConfig]);
+  // Initialize config from saved data
+  const currentConfig = savedConfig ?? config;
 
   // Save config mutation
   const saveMutation = useMutation({
@@ -105,12 +102,12 @@ export function AIPersonalityPage() {
   });
 
   const generateSystemPrompt = () => {
-    return config.personality
-      .replace(/\{\{businessName\}\}/g, config.businessName || 'Tu Negocio')
-      .replace(/\{\{businessDescription\}\}/g, config.businessDescription || 'Un negocio dedicado a servir a nuestros clientes.')
-      .replace(/\{\{tone\}\}/g, config.tone)
-      .replace(/\{\{greeting\}\}/g, config.greeting)
-      .replace(/\{\{fallbackMessage\}\}/g, config.fallbackMessage);
+    return currentConfig.personality
+      .replace(/\{\{businessName\}\}/g, currentConfig.businessName || 'Tu Negocio')
+      .replace(/\{\{businessDescription\}\}/g, currentConfig.businessDescription || 'Un negocio dedicado a servir a nuestros clientes.')
+      .replace(/\{\{tone\}\}/g, currentConfig.tone)
+      .replace(/\{\{greeting\}\}/g, currentConfig.greeting)
+      .replace(/\{\{fallbackMessage\}\}/g, currentConfig.fallbackMessage);
   };
 
   const handleSave = () => {
