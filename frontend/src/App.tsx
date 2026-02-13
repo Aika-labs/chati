@@ -20,6 +20,10 @@ import { SettingsPage } from './pages/dashboard/SettingsPage';
 import { TemplatesPage } from './pages/dashboard/TemplatesPage';
 import { ChatbotPreviewPage } from './pages/dashboard/ChatbotPreviewPage';
 import { ReportsPage } from './pages/dashboard/ReportsPage';
+import { WebhooksPage } from './pages/dashboard/WebhooksPage';
+import { AnalyticsPage } from './pages/dashboard/AnalyticsPage';
+import { TeamPage } from './pages/dashboard/TeamPage';
+import { AIPersonalityPage } from './pages/dashboard/AIPersonalityPage';
 
 // Layout
 import { DashboardLayout } from './components/layout';
@@ -174,6 +178,10 @@ function AppRoutes() {
           <Route path="templates" element={<TemplatesPage />} />
           <Route path="chatbot" element={<ChatbotPreviewPage />} />
           <Route path="reports" element={<ReportsPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="webhooks" element={<WebhooksPage />} />
+          <Route path="team" element={<TeamPage />} />
+          <Route path="ai-personality" element={<AIPersonalityPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 
