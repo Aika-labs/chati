@@ -3,24 +3,13 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies for native modules
-RUN apk add --no-cache python3 make g++
-
-# Copy package files
+# Install dependencies
 COPY package*.json ./
-COPY prisma ./prisma/
-
-# Install all dependencies (including dev for build)
 RUN npm ci
 
-# Generate Prisma client
+# Copy source and build
+COPY . .
 RUN npx prisma generate
-
-# Copy source code
-COPY tsconfig.json ./
-COPY src ./src/
-
-# Build TypeScript
 RUN npm run build
 
 # Production stage
@@ -28,36 +17,29 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-# Install runtime dependencies only
-RUN apk add --no-cache tini
-
-# Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
-
-# Install production dependencies only
-RUN npm ci --omit=dev
-
-# Generate Prisma client for production
-RUN npx prisma generate
-
-# Copy built application
-COPY --from=builder /app/dist ./dist/
-
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S chati -u 1001 -G nodejs
+    adduser -S nodejs -u 1001
+
+# Copy built assets
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/prisma ./prisma
 
 # Set ownership
-RUN chown -R chati:nodejs /app
+RUN chown -R nodejs:nodejs /app
 
-USER chati
+USER nodejs
 
-# Expose port
+# Environment
+ENV NODE_ENV=production
+ENV PORT=3000
+
 EXPOSE 3000
 
-# Use tini as init system
-ENTRYPOINT ["/sbin/tini", "--"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
-# Start application
 CMD ["node", "dist/app.js"]

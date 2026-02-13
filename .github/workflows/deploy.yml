@@ -8,29 +8,28 @@ on:
       environment:
         description: 'Environment to deploy to'
         required: true
-        default: 'dev'
+        default: 'staging'
         type: choice
         options:
-          - dev
-          - prod
+          - staging
+          - production
 
 env:
-  NODE_VERSION: '20'
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/chati-backend
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
-    name: Build & Push Docker Image
+    name: Build and Push Images
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    
+
     outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
-      image-digest: ${{ steps.build.outputs.digest }}
-    
+      backend-image: ${{ steps.meta-backend.outputs.tags }}
+      frontend-image: ${{ steps.meta-frontend.outputs.tags }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,129 +44,76 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
+      - name: Extract metadata (backend)
+        id: meta-backend
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend
           tags: |
             type=sha,prefix=
             type=ref,event=branch
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
-      - name: Build and push
-        id: build
+      - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
           context: ./backend
-          file: ./backend/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  deploy-infrastructure:
-    name: Deploy Infrastructure
+      - name: Extract metadata (frontend)
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          build-args: |
+            VITE_API_URL=${{ vars.VITE_API_URL }}
+            VITE_CLERK_PUBLISHABLE_KEY=${{ vars.VITE_CLERK_PUBLISHABLE_KEY }}
+            VITE_STRIPE_PUBLISHABLE_KEY=${{ vars.VITE_STRIPE_PUBLISHABLE_KEY }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-staging:
+    name: Deploy to Staging
     runs-on: ubuntu-latest
     needs: build-and-push
-    environment: ${{ github.event.inputs.environment || 'dev' }}
-    
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    environment: staging
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: infra/package-lock.json
-
-      - name: Install dependencies
-        working-directory: infra
-        run: npm ci
-
-      - name: Pulumi Up
-        uses: pulumi/actions@v5
-        with:
-          command: up
-          stack-name: Aika-labs-org/chati-infra/${{ github.event.inputs.environment || 'dev' }}
-          work-dir: infra
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-
-  deploy-application:
-    name: Deploy Application
-    runs-on: ubuntu-latest
-    needs: [build-and-push, deploy-infrastructure]
-    environment: ${{ github.event.inputs.environment || 'dev' }}
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: infra/package-lock.json
-
-      - name: Install Pulumi CLI
-        uses: pulumi/actions@v5
-
-      - name: Install dependencies
-        working-directory: infra
-        run: npm ci
-
-      - name: Get server IP
-        id: get-ip
-        working-directory: infra
+      - name: Deploy to staging
         run: |
-          pulumi stack select Aika-labs-org/chati-infra/${{ github.event.inputs.environment || 'dev' }}
-          echo "server_ip=$(pulumi stack output serverIp)" >> $GITHUB_OUTPUT
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          echo "Deploying to staging environment..."
+          echo "Backend image: ${{ needs.build-and-push.outputs.backend-image }}"
+          echo "Frontend image: ${{ needs.build-and-push.outputs.frontend-image }}"
+          # Add your deployment commands here (kubectl, docker-compose, etc.)
 
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ steps.get-ip.outputs.server_ip }}
-          username: deploy
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /opt/chati/app
-            
-            # Pull latest code
-            git pull origin main
-            
-            # Update Docker image
-            docker-compose pull
-            
-            # Restart services with zero downtime
-            docker-compose up -d --remove-orphans
-            
-            # Run database migrations
-            docker-compose exec -T backend npx prisma migrate deploy
-            
-            # Clean up old images
-            docker image prune -f
-            
-            echo "Deployment complete!"
-
-  notify:
-    name: Notify
+  deploy-production:
+    name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [deploy-application]
-    if: always()
-    
+    needs: [build-and-push, deploy-staging]
+    if: github.event.inputs.environment == 'production'
+    environment: production
+
     steps:
-      - name: Deployment Status
+      - name: Deploy to production
         run: |
-          if [ "${{ needs.deploy-application.result }}" == "success" ]; then
-            echo "✅ Deployment successful!"
-          else
-            echo "❌ Deployment failed!"
-            exit 1
-          fi
+          echo "Deploying to production environment..."
+          echo "Backend image: ${{ needs.build-and-push.outputs.backend-image }}"
+          echo "Frontend image: ${{ needs.build-and-push.outputs.frontend-image }}"
+          # Add your deployment commands here

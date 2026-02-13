@@ -12,7 +12,11 @@ import {
   Package,
   FileStack,
   Bot,
-  BarChart3
+  BarChart3,
+  Webhook,
+  PieChart,
+  UsersRound,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuthStore } from '../../stores/auth.store';
@@ -32,7 +36,11 @@ const navItems = [
   { icon: FileText, label: 'Documentos', href: '/dashboard/documents' },
   { icon: FileStack, label: 'Templates', href: '/dashboard/templates' },
   { icon: Bot, label: 'Chatbot', href: '/dashboard/chatbot' },
+  { icon: Sparkles, label: 'IA Personalidad', href: '/dashboard/ai-personality' },
   { icon: BarChart3, label: 'Reportes', href: '/dashboard/reports' },
+  { icon: PieChart, label: 'Analytics', href: '/dashboard/analytics' },
+  { icon: UsersRound, label: 'Equipo', href: '/dashboard/team' },
+  { icon: Webhook, label: 'Webhooks', href: '/dashboard/webhooks' },
   { icon: Settings, label: 'Configuración', href: '/dashboard/settings' },
 ];
 

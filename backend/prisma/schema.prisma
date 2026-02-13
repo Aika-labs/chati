@@ -90,6 +90,14 @@ model User {
   // Activity
   lastLoginAt DateTime?
 
+  // Team features
+  skills          String[]  // Skills for smart routing
+  maxConcurrent   Int       @default(10) // Max concurrent conversations
+  isAvailable     Boolean   @default(true) // Online status
+  
+  // Assigned conversations
+  assignedConversations ConversationAssignment[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -196,6 +204,10 @@ model Conversation {
   // Context for AI
   currentIntent String?
   contextData   Json?
+  
+  // Sentiment tracking
+  sentiment     String?  // positive, negative, neutral
+  sentimentScore Float?
 
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -204,6 +216,7 @@ model Conversation {
   contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   messages Message[]
+  assignments ConversationAssignment[]
 
   lastMessageAt DateTime @default(now())
   createdAt     DateTime @default(now())
@@ -213,6 +226,27 @@ model Conversation {
   @@index([contactId])
   @@index([status])
   @@index([lastMessageAt])
+}
+
+// Conversation assignment for team management
+model ConversationAssignment {
+  id String @id @default(cuid())
+  
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  assignedAt DateTime @default(now())
+  assignedBy String?  // User ID who assigned
+  
+  // Status
+  isActive Boolean @default(true)
+  
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
 }
 
 model Message {
@@ -660,4 +694,113 @@ enum ApiScope {
   
   // Webhooks
   WEBHOOKS_MANAGE
+}
+
+// ============================================
+// OUTBOUND WEBHOOKS
+// ============================================
+
+model Webhook {
+  id          String   @id @default(cuid())
+  name        String   // Friendly name
+  url         String   // Endpoint URL
+  
+  // Authentication
+  secret      String?  // For HMAC signature verification
+  headers     Json?    // Custom headers to send
+  
+  // Events to subscribe to
+  events      WebhookEvent[]
+  
+  // Status
+  isActive    Boolean  @default(true)
+  
+  // Retry configuration
+  maxRetries  Int      @default(3)
+  retryDelay  Int      @default(60) // seconds
+  
+  // Stats
+  lastTriggeredAt DateTime?
+  successCount    Int      @default(0)
+  failureCount    Int      @default(0)
+  
+  // Ownership
+  tenantId    String
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  deliveries  WebhookDelivery[]
+
+  @@index([tenantId])
+  @@index([isActive])
+}
+
+model WebhookDelivery {
+  id          String   @id @default(cuid())
+  
+  // Event info
+  event       WebhookEvent
+  payload     Json     // The data sent
+  
+  // Delivery status
+  status      WebhookDeliveryStatus @default(PENDING)
+  attempts    Int      @default(0)
+  
+  // Response info
+  statusCode  Int?
+  responseBody String? @db.Text
+  responseTime Int?    // ms
+  
+  // Error tracking
+  errorMessage String?
+  nextRetryAt  DateTime?
+  
+  // Relations
+  webhookId   String
+  webhook     Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  tenantId    String
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([webhookId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum WebhookEvent {
+  // Messages
+  MESSAGE_RECEIVED
+  MESSAGE_SENT
+  MESSAGE_DELIVERED
+  MESSAGE_READ
+  MESSAGE_FAILED
+  
+  // Conversations
+  CONVERSATION_STARTED
+  CONVERSATION_CLOSED
+  CONVERSATION_ASSIGNED
+  
+  // Contacts
+  CONTACT_CREATED
+  CONTACT_UPDATED
+  
+  // Appointments
+  APPOINTMENT_CREATED
+  APPOINTMENT_UPDATED
+  APPOINTMENT_CANCELLED
+  APPOINTMENT_REMINDER
+  
+  // AI
+  AI_HANDOFF_REQUESTED
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  RETRYING
 }

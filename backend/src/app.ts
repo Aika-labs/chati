@@ -9,6 +9,7 @@ import { checkDatabaseConnection, disconnectDatabase } from './config/database.j
 import { checkRedisConnection, redis } from './config/redis.js';
 import { logger } from './shared/utils/logger.js';
 import { errorHandler } from './shared/middleware/error.handler.js';
+import { rateLimiters } from './shared/middleware/rate-limiter.middleware.js';
 
 // Import routes
 import { authRoutes } from './modules/auth/auth.routes.js';
@@ -25,6 +26,8 @@ import { templatesRoutes } from './modules/templates/templates.routes.js';
 import { apiKeysRoutes } from './modules/api-keys/api-keys.routes.js';
 import { publicApiRoutes } from './modules/public-api/public-api.routes.js';
 import { docsRoutes } from './modules/docs/docs.routes.js';
+import { webhooksRoutes } from './modules/webhooks/webhooks.routes.js';
+import { teamRoutes } from './modules/team/team.routes.js';
 
 // Import Socket.io handler
 import { setupSocketHandlers } from './modules/realtime/socket.handler.js';
@@ -73,20 +76,34 @@ app.get('/health', async (_req, res) => {
   });
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/tenants', tenantRoutes);
-app.use('/api/whatsapp', whatsappRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/calendar', calendarRoutes);
-app.use('/api/contacts', contactsRoutes);
-app.use('/api/rag', ragRoutes);
-app.use('/api/knowledge', knowledgeRoutes);
-app.use('/api/autoreply', autoReplyRoutes);
-app.use('/api/billing', billingRoutes);
-app.use('/api/templates', templatesRoutes);
-app.use('/api/api-keys', apiKeysRoutes);
-app.use('/api/v1', publicApiRoutes);
+// Readiness check (for Kubernetes)
+app.get('/ready', async (_req, res) => {
+  const dbHealthy = await checkDatabaseConnection();
+  const redisHealthy = await checkRedisConnection();
+
+  if (dbHealthy && redisHealthy) {
+    res.status(200).json({ ready: true });
+  } else {
+    res.status(503).json({ ready: false });
+  }
+});
+
+// API Routes with rate limiting
+app.use('/api/auth', rateLimiters.auth, authRoutes);
+app.use('/api/tenants', rateLimiters.api, tenantRoutes);
+app.use('/api/whatsapp', rateLimiters.webhooks, whatsappRoutes);
+app.use('/api/ai', rateLimiters.ai, aiRoutes);
+app.use('/api/calendar', rateLimiters.api, calendarRoutes);
+app.use('/api/contacts', rateLimiters.api, contactsRoutes);
+app.use('/api/rag', rateLimiters.uploads, ragRoutes);
+app.use('/api/knowledge', rateLimiters.api, knowledgeRoutes);
+app.use('/api/autoreply', rateLimiters.api, autoReplyRoutes);
+app.use('/api/billing', rateLimiters.api, billingRoutes);
+app.use('/api/templates', rateLimiters.api, templatesRoutes);
+app.use('/api/api-keys', rateLimiters.api, apiKeysRoutes);
+app.use('/api/webhooks', rateLimiters.api, webhooksRoutes);
+app.use('/api/team', rateLimiters.api, teamRoutes);
+app.use('/api/v1', rateLimiters.publicApi, publicApiRoutes);
 app.use('/api/docs', docsRoutes);
 
 // 404 handler
