@@ -10,7 +10,9 @@ import {
   LogOut,
   ChevronLeft,
   Package,
-  FileStack
+  FileStack,
+  Bot,
+  BarChart3
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuthStore } from '../../stores/auth.store';
@@ -29,6 +31,8 @@ const navItems = [
   { icon: Package, label: 'Productos', href: '/dashboard/products' },
   { icon: FileText, label: 'Documentos', href: '/dashboard/documents' },
   { icon: FileStack, label: 'Templates', href: '/dashboard/templates' },
+  { icon: Bot, label: 'Chatbot', href: '/dashboard/chatbot' },
+  { icon: BarChart3, label: 'Reportes', href: '/dashboard/reports' },
   { icon: Settings, label: 'Configuración', href: '/dashboard/settings' },
 ];
 

@@ -9,6 +9,7 @@ import { SignInPage } from './pages/auth/SignInPage';
 import { SignUpPage } from './pages/auth/SignUpPage';
 import { PlanSelectionPage } from './pages/onboarding/PlanSelectionPage';
 import { CheckoutSuccessPage } from './pages/onboarding/CheckoutSuccessPage';
+import { OnboardingWizardPage } from './pages/onboarding/OnboardingWizardPage';
 import { DashboardHome } from './pages/dashboard/DashboardHome';
 import { ConversationsPage } from './pages/dashboard/ConversationsPage';
 import { ContactsPage } from './pages/dashboard/ContactsPage';
@@ -17,6 +18,8 @@ import { DocumentsPage } from './pages/dashboard/DocumentsPage';
 import { ProductsPage } from './pages/dashboard/ProductsPage';
 import { SettingsPage } from './pages/dashboard/SettingsPage';
 import { TemplatesPage } from './pages/dashboard/TemplatesPage';
+import { ChatbotPreviewPage } from './pages/dashboard/ChatbotPreviewPage';
+import { ReportsPage } from './pages/dashboard/ReportsPage';
 
 // Layout
 import { DashboardLayout } from './components/layout';
@@ -144,6 +147,14 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/onboarding/setup"
+          element={
+            <ProtectedRoute>
+              <OnboardingWizardPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Protected dashboard routes */}
         <Route
@@ -161,6 +172,8 @@ function AppRoutes() {
           <Route path="products" element={<ProductsPage />} />
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="templates" element={<TemplatesPage />} />
+          <Route path="chatbot" element={<ChatbotPreviewPage />} />
+          <Route path="reports" element={<ReportsPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 

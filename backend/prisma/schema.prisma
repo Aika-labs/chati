@@ -562,3 +562,102 @@ enum TemplateCategory {
   PROMOTION
   CUSTOM
 }
+
+// ============================================
+// PUBLIC API (API Keys, Rate Limiting, Audit)
+// ============================================
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  name        String   // Friendly name for the key
+  key         String   @unique // The actual API key (hashed)
+  keyPrefix   String   // First 8 chars for identification (e.g., "ck_live_")
+  
+  // Permissions
+  scopes      ApiScope[]
+  
+  // Rate limiting
+  rateLimit   Int      @default(100)  // Requests per minute
+  dailyLimit  Int      @default(10000) // Requests per day
+  
+  // Usage tracking
+  lastUsedAt  DateTime?
+  requestCount Int     @default(0)
+  
+  // Status
+  isActive    Boolean  @default(true)
+  expiresAt   DateTime?
+  
+  // Ownership
+  tenantId    String
+  createdById String
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  auditLogs   ApiAuditLog[]
+
+  @@index([tenantId])
+  @@index([key])
+  @@index([isActive])
+}
+
+model ApiAuditLog {
+  id          String   @id @default(cuid())
+  
+  // Request info
+  method      String   // GET, POST, etc.
+  endpoint    String   // /api/v1/messages
+  statusCode  Int
+  responseTime Int     // ms
+  
+  // Request details
+  ipAddress   String?
+  userAgent   String?
+  requestBody String?  @db.Text // Sanitized, no PII
+  
+  // Error tracking
+  errorCode   String?
+  errorMessage String?
+  
+  // Relations
+  apiKeyId    String
+  apiKey      ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  tenantId    String
+  
+  createdAt   DateTime @default(now())
+
+  @@index([apiKeyId])
+  @@index([tenantId])
+  @@index([createdAt])
+  @@index([endpoint])
+}
+
+enum ApiScope {
+  // Messages
+  MESSAGES_READ
+  MESSAGES_WRITE
+  
+  // Contacts
+  CONTACTS_READ
+  CONTACTS_WRITE
+  
+  // Conversations
+  CONVERSATIONS_READ
+  CONVERSATIONS_WRITE
+  
+  // Appointments
+  APPOINTMENTS_READ
+  APPOINTMENTS_WRITE
+  
+  // Knowledge base
+  KNOWLEDGE_READ
+  KNOWLEDGE_WRITE
+  
+  // Analytics (read-only)
+  ANALYTICS_READ
+  
+  // Webhooks
+  WEBHOOKS_MANAGE
+}
