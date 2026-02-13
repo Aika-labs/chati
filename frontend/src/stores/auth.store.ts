@@ -5,12 +5,15 @@ import api from '../lib/api';
 import { connectSocket, disconnectSocket } from '../lib/socket';
 
 interface AuthStore extends AuthState {
+  // Legacy methods (kept for backward compatibility)
   login: (email: string, password: string) => Promise<void>;
   register: (data: { email: string; password: string; name: string; businessName: string }) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   setAuth: (data: { token: string; user: User; tenant: Tenant }) => void;
+  // Clerk integration
+  syncWithClerk: (clerkToken: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -22,6 +25,65 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       isLoading: true,
 
+      // Sync with Clerk - called after Clerk authentication
+      syncWithClerk: async (clerkToken: string) => {
+        set({ isLoading: true });
+        try {
+          const response = await api.post<{
+            success: boolean;
+            data: { 
+              user: { id: string; email: string; name: string; role: string };
+              tenant: { 
+                id: string; 
+                name: string; 
+                slug: string; 
+                status: string; 
+                plan: string;
+                businessName?: string;
+                timezone?: string;
+                workingHoursStart?: string;
+                workingHoursEnd?: string;
+                workingDays?: string[];
+              };
+              token: string;
+              isNewUser: boolean;
+            };
+          }>('/auth/clerk', {}, {
+            headers: {
+              Authorization: `Bearer ${clerkToken}`,
+            },
+          });
+
+          if (response.data.success && response.data.data) {
+            const { user, tenant, token } = response.data.data;
+            
+            localStorage.setItem('token', token);
+            
+            connectSocket(token);
+            
+            set({
+              user: user as User,
+              tenant: {
+                ...tenant,
+                businessName: tenant.name || tenant.businessName || '',
+                timezone: tenant.timezone || 'America/Mexico_City',
+                workingHoursStart: tenant.workingHoursStart || '09:00',
+                workingHoursEnd: tenant.workingHoursEnd || '18:00',
+                workingDays: tenant.workingDays || ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+              } as Tenant,
+              token,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          }
+        } catch (error) {
+          console.error('Failed to sync with Clerk:', error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      // Legacy login method
       login: async (email: string, password: string) => {
         set({ isLoading: true });
         try {
@@ -52,6 +114,7 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
+      // Legacy register method
       register: async (data) => {
         set({ isLoading: true });
         try {

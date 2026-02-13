@@ -39,6 +39,12 @@ const envSchema = z.object({
   CLERK_PUBLISHABLE_KEY: z.string().optional(),
   CLERK_WEBHOOK_SECRET: z.string().optional(),
 
+  // Stripe Billing
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_PRICE_STARTER: z.string().optional(),
+  STRIPE_PRICE_PRO: z.string().optional(),
+
   // Rate Limiting
   RATE_LIMIT_OUTBOUND_MESSAGES_PER_DAY: z.string().default('250').transform(Number),
   RATE_LIMIT_INBOUND_MESSAGES_PER_MINUTE: z.string().default('100').transform(Number),

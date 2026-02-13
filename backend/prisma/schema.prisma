@@ -24,11 +24,13 @@ model Tenant {
   plan      PlanType     @default(FREE)
   
   // Billing
-  trialEndsAt       DateTime?
-  subscriptionId    String?
-  lastPaymentAt     DateTime?
-  suspendedAt       DateTime?
-  suspensionReason  String?
+  trialEndsAt          DateTime?
+  subscriptionId       String?
+  lastPaymentAt        DateTime?
+  suspendedAt          DateTime?
+  suspensionReason     String?
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
 
   // Limits (overridable per tenant)
   maxOutboundMessagesPerDay Int @default(250)
@@ -515,4 +517,48 @@ enum UsageType {
   AI_REQUESTS
   RAG_QUERIES
   API_REQUESTS
+}
+
+// ============================================
+// RESPONSE TEMPLATES (Pre-built templates by industry)
+// ============================================
+
+model ResponseTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  category    TemplateCategory
+  industry    String?  // e.g., "salon", "restaurant", "clinic"
+  
+  // Template content
+  content     String   // The actual response text
+  variables   String[] // Placeholders like {{name}}, {{date}}
+  
+  // Metadata
+  isGlobal    Boolean  @default(false) // Available to all tenants
+  usageCount  Int      @default(0)
+  
+  // Tenant-specific templates
+  tenantId    String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([industry])
+  @@index([tenantId])
+  @@index([isGlobal])
+}
+
+enum TemplateCategory {
+  GREETING
+  APPOINTMENT
+  PRICING
+  HOURS
+  LOCATION
+  THANKS
+  GOODBYE
+  FAQ
+  PROMOTION
+  CUSTOM
 }
